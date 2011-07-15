@@ -1,0 +1,184 @@
+\documentclass[a4paper]{article}
+\usepackage{xeCJK}
+\setCJKmainfont[BoldFont=SimHei,ItalicFont=KaiTi_GB2312]
+{SimSun}
+\setCJKsansfont{SimHei}
+\setCJKmonofont{WenQuanYi Micro Hei Mono}
+\setCJKfamilyfont{zhsong}{SimSun}
+\setCJKfamilyfont{zhhei}{SimHei}
+\setCJKfamilyfont{zhkai}{KaiTi_GB2312}
+\setCJKfamilyfont{zhfs}{FangSong_GB2312}
+\newcommand*{\songti}{\CJKfamily{zhsong}}
+\newcommand*{\heiti}{\CJKfamily{zhhei}}
+\newcommand*{\kaishu}{\CJKfamily{zhkai}}
+\newcommand*{\fangsong}{\CJKfamily{zhfs}}
+
+\renewcommand*\contentsname{目录}
+
+\usepackage{cchess}
+\usepackage[margin=3.5cm]{geometry}
+\usepackage{hyperref}
+
+\title{机器人象棋程序手册}
+\author{顾聪}
+\date{2011年7月}
+\begin{document}
+\maketitle
+\tableofcontents
+
+
+\section{概述}
+此手册的目的是提供使用和理解此计算机中国象棋程序所必需的信息。此组程序
+所做的工作包括：人机象棋对弈流程跟踪、读取棋盘(串口)、发送机器手控制信
+息(串口)、象棋运算引掣(eleeye/xboard)以及一个学习棋盘和棋子的辅助程序。
+以上各部分可独立调试运作，也能相互配合完成整个任务。
+
+此程序设计运行于32位Linux操作系统 \footnote{一个自由，免费，开放源代码
+  的Unix操作系统内核。包含一定组件、开发工具、应用程序的Linux操作系统称
+  为一个``发行版''(distro)，常见的发行版有Fedora、Ubuntu、Archlinux等。
+  各发行版如何安装系统、添加软件等问题超出本文范筹，请查阅所选发行版的
+  文档。}上。除串口读写程序尚未正确移植外都可通过 Cygwin
+\footnote{在Microsoft Windows下实现的Unix系统调用API。同时移植有许
+  多Unix下的开发工具和应用程序。}重新编译，从而移植到 Microsoft
+Windows 下。请注意，若需要修改和编译此程序，请在发行版或Cygwin中安
+装GNU工具链\footnote{主要包括GCC(GNU Compiler Collection，含有C与C++编
+  译器)、GNU make等}。
+
+此程序以GNU通用公共许可证(GNU GPL)\footnote{官方文
+  本：\url{http://www.gnu.org/licenses/gpl.html}。}发布。
+
+最新的源代码可在\url{http://github.com/gucong/robot-xiangqi}找到。
+
+\section{用语与表示法}
+以下描述程序中存储和交换中国象棋相关数据时所使用的用语和表示法。这是使
+用和了解计算机象棋程序的先决条件。
+
+\subsection{位置}
+借用国际象棋使用的坐标方式表示棋盘位置。用英文字母a～i表示纵线(列)，用数
+字0～9表示横线(行)，二者合成表示棋盘上的位置，如a1、c9等，如图。
+
+\smallboard
+\begin{position}
+\end{position}
+
+\subsection{棋子}
+红方棋子用大写英文字母表示，黑方棋子用小写英文字母表示，所用字母如下。
+
+\begin{tabular}{l l}
+\textpiece{k}\textpiece{K} (KING)   &用K，k表示；\\
+\textpiece{g}\textpiece{G} (ADVISOR)&用A，a表示；\\
+\textpiece{b}\textpiece{B} (BISHIP) &用B，b表示；\\
+\textpiece{n}\textpiece{N} (KNIGHT) &用N，n表示；\\
+\textpiece{r}\textpiece{R} (ROOK)   &用R，r表示；\\
+\textpiece{c}\textpiece{C} (CANNON) &用C，c表示；\\
+\textpiece{p}\textpiece{P} (PAWN)   &用P，p表示；\\
+\end{tabular}
+
+\subsection{局面}
+借用国际象棋中的FEN\footnote{Forsyth-Edwards表示法(Forsyth-Edwards
+  Notation)}来表示一个局面。实现任一局面由一行简短的文本来表示，方便局
+面信息的传递。FEN由6个段组成，由空格分隔。由于中国象棋与国际象棋的区别，
+一般只需要使用FEN的前两项。以下是初始局面的FEN表示：
+
+\begin{verbatim}
+rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1
+\end{verbatim}
+
+第一段描述棋子位置。由斜杠(/)分隔的每一小段描述棋盘上的一行，依次为
+行9至行0。每一行中，从列a至列i，遇棋子则写代表棋子的英文字母，遇空位则
+写相连空位的个数。
+
+第二段描述轮到哪一方走子，w表示红方，b表示黑方。
+
+第三、第四段在中国象棋中不适用，填短横杠(-)，第五段是可逆半回合数，第六
+段是总回合数。在这里，缺失三、四、五、六段的，也认为是合法的FEN。
+
+
+\smallboard
+\begin{position}
+  \piece{a}{0}{r} \piece{i}{0}{r}
+  \piece{b}{0}{n} \piece{h}{0}{n}
+  \piece{c}{0}{b} \piece{g}{0}{b}
+  \piece{d}{0}{g} \piece{f}{0}{g}
+  \piece{e}{0}{k}
+  \piece{b}{2}{c} \piece{h}{2}{c}
+  \piece{a}{3}{p} \piece{c}{3}{p} \piece{e}{3}{p} \piece{g}{3}{p} \piece{i}{3}{p}
+
+  \piece{a}{9}{R} \piece{i}{9}{R}
+  \piece{b}{9}{N} \piece{h}{9}{N}
+  \piece{c}{9}{B} \piece{g}{9}{B}
+  \piece{d}{9}{G} \piece{f}{9}{G}
+  \piece{e}{9}{K}
+  \piece{b}{7}{C} \piece{h}{7}{C}
+  \piece{a}{6}{P} \piece{c}{6}{P} \piece{e}{6}{P} \piece{g}{6}{P} \piece{i}{6}{P}
+\end{position}
+
+\subsection{走子}
+使用坐标表示一个着法，格式为起始位置加目标位置。例如，初始局面下红
+方``炮二平五''表示成``b2e2''。吃子着法同样用主动子的起始位置加目标位置
+表示。例如，黑方接着``炮八进七''就表示成``h7h0''。
+
+\smallboard
+\begin{position}
+  \piece{a}{0}{r} \piece{i}{0}{r}
+  \piece{b}{0}{n} \piece{h}{0}{n}
+  \piece{c}{0}{b} \piece{g}{0}{b}
+  \piece{d}{0}{g} \piece{f}{0}{g}
+  \piece{e}{0}{k}
+  \piece{e}{2}{c} \piece{h}{2}{c}
+  \piece{a}{3}{p} \piece{c}{3}{p} \piece{e}{3}{p} \piece{g}{3}{p} \piece{i}{3}{p}
+
+  \piece{a}{9}{R} \piece{i}{9}{R}
+  \piece{b}{9}{N} \piece{h}{9}{N}
+  \piece{c}{9}{B} \piece{g}{9}{B}
+  \piece{d}{9}{G} \piece{f}{9}{G}
+  \piece{e}{9}{K}
+  \piece{b}{7}{C} \piece{h}{7}{C}
+  \piece{a}{6}{P} \piece{c}{6}{P} \piece{e}{6}{P} \piece{g}{6}{P} \piece{i}{6}{P}
+\end{position}
+\smallboard
+\begin{position}
+  \piece{a}{0}{r} \piece{i}{0}{r}
+  \piece{b}{0}{n} \piece{h}{0}{C}
+  \piece{c}{0}{b} \piece{g}{0}{b}
+  \piece{d}{0}{g} \piece{f}{0}{g}
+  \piece{e}{0}{k}
+  \piece{e}{2}{c} \piece{h}{2}{c}
+  \piece{a}{3}{p} \piece{c}{3}{p} \piece{e}{3}{p} \piece{g}{3}{p} \piece{i}{3}{p}
+
+  \piece{a}{9}{R} \piece{i}{9}{R}
+  \piece{b}{9}{N} \piece{h}{9}{N}
+  \piece{c}{9}{B} \piece{g}{9}{B}
+  \piece{d}{9}{G} \piece{f}{9}{G}
+  \piece{e}{9}{K}
+  \piece{b}{7}{C}
+  \piece{a}{6}{P} \piece{c}{6}{P} \piece{e}{6}{P} \piece{g}{6}{P} \piece{i}{6}{P}
+\end{position}
+
+\subsection{一维形式}
+程序内部有时使用一维方式存储棋子位置。先从左至右，再从下至上，位
+置0代表a0，位置1代表b0，\dots，位置8代表i0，位置9代表a1，\dots，依此类
+推，直到位置89代表i9。各位置若有棋子，则填入代表棋子的英文字母，若为空
+位，则填入下划线(\_)。另外，学习棋盘时也按此顺序。
+
+\section{安装与使用}
+命令的基本使用可参照附录\ref{app1}。
+
+\section{程序组成}
+为了灵活地在运行时选择组件，整个程序由数个可独立运行的部分合作运行，组
+件的选择只需在起动主程序时给出相应的命令行参数即可。组件包括：人机象棋
+对弈流程跟踪、读取棋盘(串口)、发送机器手控制信息(串口)、象棋运算引
+掣(eleeye/xboard)。
+
+\subsection{人机象棋对弈流程跟踪(主程序)}
+\subsection{象棋引掣}
+\subsection{棋盘读取程序}
+\subsection{发送机器手控制信息}
+\subsection{学习棋盘与棋子}
+
+\clearpage
+\appendix
+\section{Unix命令行的基本使用}
+\label{app1}
+
+\end{document}

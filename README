@@ -1,0 +1,59 @@
+========ENGLISH=======
+See doc/manual.pdf (in Chinese) for information about this program.
+
+* HOW TO USE:
+
+If you get the source tree from the git repo, you need xelatex
+(usually from texlive) to compile doc/manual.pdf.  Then, you need GNU
+Autotools and run:
+
+   ./autogen.sh
+
+before you follow the instructions in INSTALL.
+
+If you get a tarball (such as a file ended with .tar.gz), you need to
+unpack it then follow the instructions in INSTALL.  Fortunately,
+doc/manual.pdf is already there for your reference.
+
+For a short version of INSTALL, running
+
+    ./configure
+    make
+    make install
+
+when you're in the source directory will install the program to your
+computer.  Note that you need to have proper previlage to run the last
+command.  In many cases, this means running:
+
+    sudo make install
+
+instead of just "make install".
+
+========CHINESE=======
+请参阅 doc/manual.pdf (中文) 来了解此程序。
+
+* 如何使用：
+
+如果你从GIT仓库获取此程序的源代码，你需要 xelatex (通常来自 texlive 程
+序包) 来生成 doc/manual.pdf。接着你需要 GNU Autotools，并在源码目录下运
+行：
+
+    ./autogen.sh
+
+然后再继续参阅 INSTALL 文件。
+
+如果你获取的是一个扩展名类似 .tar.gz 的压缩包，你需要解压它，再继续参阅
+INSTALL 文件。doc/manual.pdf此时已经存在于压缩包中，供你参阅。
+
+INSTALL 文件中的内容简单来说，就是在源代码文件夹下运行：
+
+    ./configure
+    make
+    make install
+
+这样，程序就安装在电脑中了。请注意，你需要有合适的权限来运行最后一条命
+令。在很多情况下，这意味着要运行
+
+    sudo make install
+
+而不是"make install"。
