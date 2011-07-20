@@ -52,7 +52,7 @@
 
 char *fen_to_board(const char *fen_setup);
 
-char *extract_move(const char *prev_board, const char *cur_board);
+int extract_move(const char *prev_board, const char *cur_board, char *move);
 
 char *apply_move(const char *prev_board, const char *move);
 

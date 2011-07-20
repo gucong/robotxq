@@ -70,9 +70,8 @@ char *fen_to_board(const char *fen_setup)
     }
 }
 
-char *extract_move(const char *prev_board, const char *cur_board)
+int extract_move(const char *prev_board, const char *cur_board, char *move)
 {
-    static char move[6];
     int gone[1], appear[1], change[1];
     int gone_nr = 0, appear_nr = 0, change_nr = 0;
     int i;
@@ -81,39 +80,48 @@ char *extract_move(const char *prev_board, const char *cur_board)
         char cur = cur_board[i];
         if (prev != cur) {
             if (prev == BD_EMPTY && cur != BD_EMPTY) {
-                if (appear_nr > 0)
-                    return NULL;
-                appear[appear_nr++] = i;
+                if (appear_nr == 0)
+                    appear[appear_nr] = i;
+                appear_nr++;
             }
             else if (prev != BD_EMPTY && cur == BD_EMPTY) {
-                if (gone_nr > 0)
-                    return NULL;
-                gone[gone_nr++] = i;
+                if (gone_nr == 0)
+                    gone[gone_nr] = i;
+                gone_nr++;
             }
             else {
-                if (change_nr > 0)
-                    return NULL;
-                change[change_nr++] = i;
+                if (change_nr == 0)
+                    change[change_nr] = i;
+                change_nr++;
             }
         }
     }
+
     if (gone_nr == 1 && appear_nr == 1 && change_nr == 0) {
-        if (prev_board[gone[0]] == cur_board[appear[0]])
+        if (prev_board[gone[0]] == cur_board[appear[0]]) {
             /* move */
             set_move(move, gone[0], appear[0]);
+            return 0;
+        }
         else
-            return NULL;
+            return 2;
     }
     else if (gone_nr == 1 && appear_nr == 0 && change_nr == 1) {
-        if (BD_COLOR(prev_board[change[0]]) != BD_COLOR(cur_board[change[0]]))
+        if (BD_COLOR(prev_board[change[0]]) != BD_COLOR(cur_board[change[0]])) {
             /* capture */
             set_move(move, gone[0], change[0]);
+            return 0;
+        }
         else
-            return NULL;
+            return 2;
     }
+    else if (gone_nr > 1 && appear_nr == 1 && change_nr == 0 ||
+             gone_nr > 1 && appear_nr == 0 && change_nr == 1 ||
+             gone_nr > 0 && appear_nr == 0 && change_nr == 0)
+        /* possible read board error */
+        return 1;
     else
-        return NULL;
-    return move;
+        return 2;
 }
 
 char *apply_move(const char *prev_board, const char *move)

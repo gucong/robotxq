@@ -17,7 +17,7 @@ doc/manual.pdf is already there for your reference.
 
 For a short version of INSTALL, running
 
-    ./configure
+    ./configure --prefix=/usr --sysconfdir=/etc
     make
     make install
 
@@ -47,7 +47,7 @@ INSTALL 文件。doc/manual.pdf此时已经存在于压缩包中，供你参阅�
 
 INSTALL 文件中的内容简单来说，就是在源代码文件夹下运行：
 
-    ./configure
+    ./configure --prefix=/usr --sysconfdir=/etc
     make
     make install
 

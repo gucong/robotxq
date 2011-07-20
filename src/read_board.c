@@ -4,7 +4,7 @@
 #include "read_board.h"
 #include "xiangqi.h"
 
-#define MAXLINE 1024
+#define MAXLINE 4096
 
 char read_board_prog[MAXLINE];
 int virt_to_phys[VIRTPTS];
@@ -15,14 +15,15 @@ static char lookup(int content);
 
 int init_read_board(const char *prog, const char *conf_file)
 {
-    /* save prog */
-    strncpy(read_board_prog, prog, MAXLINE);
-
     /* load board configuration into memory*/
     char buf[MAXLINE];
     char *ptr;
     int i;
     FILE *conf_fp = fopen(conf_file, "r");
+    if (conf_fp == NULL) {
+        perror("open brd_file");
+        return -1;
+    }
 
     fgets(buf, MAXLINE, conf_fp);
     for (ptr = strtok(buf, " \n"), i = 0; ptr && i < VIRTPTS; ptr = strtok(NULL, " \n"), ++i) {
@@ -47,6 +48,9 @@ int init_read_board(const char *prog, const char *conf_file)
     }
 
     fclose(conf_fp);
+
+    /* save prog */
+    strncpy(read_board_prog, prog, MAXLINE);
 
     return 0;
 }

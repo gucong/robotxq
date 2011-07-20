@@ -32,6 +32,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "evaluate.h"
 #include "preeval.h"
 
+/* if not working with autotools */
+#ifndef PKGDATADIR
+#define PKGDATADIR "."
+#endif
+
 #ifdef _WIN32
   #include <windows.h>
   const char *const cszLibEvalFile = "";
@@ -170,7 +175,7 @@ int main(void) {
   Search.nRandom = 0;
   Search.nRandomSave = 2;
 
-  LocatePath(Search.szBookFile, "../share/xiangqi/book.dat");
+  LocatePath(Search.szBookFile, PKGDATADIR "/book.dat");
   //LocatePath(Search.szBookFile, "book.dat");
   LocatePath(Search.szLibEvalFile, cszLibEvalFile);
   hModule = LoadEvalApi(Search.szLibEvalFile);

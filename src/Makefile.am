@@ -1,9 +1,11 @@
-SUBDIRS = eleeye_xb io_board
+SUBDIRS = eleeye_xb io_board learn_brd
 
-bin_PROGRAMS = robotxq
+bin_PROGRAMS = robotxq catboard
 
-robotxq_SOURCES = main.c read_board.c xiangqi.c
+robotxq_SOURCES = robotxq.c read_board.c xiangqi.c
+catboard_SOURCES = catboard.c read_board.c xiangqi.c
 
-robotxq_CXXFLAGS= $(AM_CPPFLAGS)
+robotxq_CFLAGS = -DCONFDIR="\"$(sysconfdir)\"" $(AM_CFLAGS)
+catboard_CFLAGS = -DCONFDIR="\"$(sysconfdir)\"" $(AM_CFLAGS)
 
 noinst_HEADERS = read_board.h xiangqi.h
