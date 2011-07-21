@@ -30,13 +30,13 @@ int init_read_board(const char *prog, const char *conf_file)
         virt_to_phys[i] = atoi(ptr);
     }
     if (i != VIRTPTS) {
-        printf("warning: %s:1: less than %d entries\n", conf_file, VIRTPTS);
+        fprintf(stderr, "warning: %s:1: less than %d entries\n", conf_file, VIRTPTS);
     }
 
     fgets(buf, MAXLINE, conf_fp);
     strncpy(order, buf, PIECES);
     if (strlen(buf) < PIECES) {
-        printf("warning: %s:2: less than %d entries\n", conf_file, PIECES);
+        fprintf(stderr, "warning: %s:2: less than %d entries\n", conf_file, PIECES);
     }
 
     fgets(buf, MAXLINE, conf_fp);
@@ -44,7 +44,7 @@ int init_read_board(const char *prog, const char *conf_file)
         ordered_pieces[i] = atoi(ptr);
     }
     if (i != PIECES) {
-        printf("warning: %s:3: less than %d entries\n", conf_file, PIECES);
+        fprintf(stderr, "warning: %s:3: less than %d entries\n", conf_file, PIECES);
     }
 
     fclose(conf_fp);
@@ -83,7 +83,7 @@ int read_board(char *board, int pass_nr)
                 board[vidx] = c;
             }
             else if (content) {
-                printf("warning: lookup failed (vidx %d, content %d)\n", vidx, content);
+                fprintf(stderr, "warning: lookup failed (position %d, content %d)\n", vidx, content);
             }
         }
     }

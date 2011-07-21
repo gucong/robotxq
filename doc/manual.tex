@@ -163,36 +163,6 @@ rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1
 推，直到位置89代表i9。各位置若有棋子，则填入代表棋子的英文字母，若为空
 位，则填入下划线(\_)。另外，学习棋盘时也按此顺序。
 
-\section{关于象棋引擎}
-象棋引擎(简称引擎)是专门负责象棋着法思考的程序，可与图形界面等程序(简称
-界面)通过标准输入输出(stdio)管道相连进行通信。robotxq实际上也是一个针对
-物理棋盘的界面。象棋引擎为了与界面通信，需要符合某种协议，达到不同引擎
-在同一界面之下互相替换、同台竞技的目的。常见的象棋通信协议有两种，一种
-是ucci协议\footnote{官方文
-  档(中文)：\url{http://www.xqbase.com/protocol/cchess_ucci.htm}}(类似
-于国际象棋的uci协议，但有一定区别)；另一种
-为xboard协议\footnote{也称winboard协议，官方文
-  档(英文)：\url{http://home.hccnet.nl/h.g.muller/engine-intf.html}}，
-中国象棋与国际象棋均适用。这两种协议在引擎和界面的分工上有很大的区
-别。ucci引擎只负责就给定的局面思考一步着法；而xboard引擎同时在内部跟踪
-棋局的进展，大多还能判断对手着法的合法性等。这些额外的功能对一个象棋引
-掣来说是顺手能实现的，而在ucci协议中都是由界面程序从头做起。可
-见，xboard引擎更像是一个完整的象棋游戏。而ucci引擎也有好处，它保证了无
-后效性，也杜绝了引擎之间对规则的不同理解产生的问题(事实上，中国象棋长打
-等规则非常复杂)。
-
-在个这里应用里，xboard协议更方便界面的编写。也能更好地保持象棋和国际象
-棋在界面编写上的统一。所以，robotxq选择使用xboard协议。
-
-此程序默认的引擎Eleeye(Elephant Eye，\url{http://www.xqbase.com})本身是
-一个的ucci协议引擎。通过对其修改，使其成为了原生的xboard协议引擎，称
-为eleeye\_xb。eleeye\_xb引擎实现了绝大部分xboard协议的命令，具备完整的
-着法合法性检查。暂时缺少的功能是利用对手时间思考(ponder)。
-
-另外，通过适配
-器ucci2wb(\url{http://home.hccnet.nl/h.g.muller/XQadapters.html})，任
-一ucci引擎可以转化为xboard引擎，但转化后的引擎不具着法合法性检查。
-
 \section{安装与初次使用}
 命令的基本使用可参照附录\ref{app1}。
 %%% sysconfdir
@@ -217,7 +187,7 @@ xq.fen保存起始局面列表。开始时的局面从中随机选取。其格�
 xq.brd保存棋盘以及棋子的对应表。其可用棋盘和棋子学习程序learn\_brd生成，
 也可手动对学习中的错误进行修改。第一行为棋盘对应表，其中的数字按一维形
 式(见\ref{onedim})排列，数字表示该棋盘位置在原始数据中的排列位置。第二
-行和第三行为棋子对应表。第三行中的数字为棋子的ID号，按第二行的中棋子的
+行和第三行为棋子对应表。第三行中的数字为棋子的ID码，按第二行的中棋子的
 顺序排列。
 
 各程序若要用到这些配置文件，则按如下顺序调取：若程序参数指定，则用此文
@@ -247,7 +217,7 @@ DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
 ENGINE选项用来指定象棋运算引擎，默认为eleeye\_xb。
 
 READER选项用来指定棋盘读取程序。默认为io\_board。调用此读取程序时，主程
-序会自动添加所指定串囗设备DEVICE。
+序会自动添加所指定串囗设备DEVICE，不用手动添加。
 
 FEN\_FILE选项用来指定起始局面列表文件，BRD\_FILE选项用来指定棋盘棋子对
 照表文件。它们的默认位置见\ref{conf}中的说明。
@@ -255,8 +225,63 @@ FEN\_FILE选项用来指定起始局面列表文件，BRD\_FILE选项用来指�
 %%% 使用...
 
 \subsection{象棋引擎：eleeye\_xb}
+象棋引擎一般由其它程序调用，不需要直接使用，本节为象棋引擎的相关信息。
+
+象棋引擎(简称引擎)是专门负责象棋着法思考的程序，可与图形界面等程序(简称
+界面)通过标准输入输出(stdio)管道相连进行通信。robotxq实际上也是一个针对
+物理棋盘的界面。象棋引擎为了与界面通信，需要符合某种协议，达到不同引擎
+在同一界面之下互相替换、同台竞技的目的。常见的象棋通信协议有两种，一种
+是ucci协议\footnote{官方文
+  档(中文)：\url{http://www.xqbase.com/protocol/cchess_ucci.htm}}(类似
+于国际象棋的uci协议，但有一定区别)；另一种
+为xboard协议\footnote{也称winboard协议，官方文
+  档(英文)：\url{http://home.hccnet.nl/h.g.muller/engine-intf.html}}，
+中国象棋与国际象棋均适用。这两种协议在引擎和界面的分工上有很大的区
+别。ucci引擎只负责就给定的局面思考一步着法；而xboard引擎同时在内部跟踪
+棋局的进展，大多还能判断对手着法的合法性等。这些额外的功能对一个象棋引
+掣来说是顺手能实现的，而在ucci协议中都是由界面程序从头做起。可
+见，xboard引擎更像是一个完整的象棋游戏。而ucci引擎也有好处，它保证了无
+后效性，也杜绝了引擎之间对规则的不同理解产生的问题(事实上，中国象棋长打
+等规则非常复杂)。
+
+在个这里应用里，xboard协议更方便界面的编写。也能更好地保持象棋和国际象
+棋在界面编写上的统一。所以，robotxq选择使用xboard协议。
+
+此程序默认的引擎Eleeye(Elephant Eye，\url{http://www.xqbase.com})本身是
+一个的ucci协议引擎。通过对其修改，使其成为了原生的xboard协议引擎，称
+为eleeye\_xb。eleeye\_xb引擎实现了绝大部分xboard协议的命令，具备完整的
+着法合法性检查。暂时缺少的功能是利用对手时间思考(ponder)。
+
+另外，通过适配
+器ucci2wb(\url{http://home.hccnet.nl/h.g.muller/XQadapters.html})，任
+一ucci引擎可以转化为xboard引擎，但转化后的引擎不具着法合法性检查。
+
 \subsection{棋盘读取程序：io\_board}
+棋盘读取程序运行后返回一串二进制的棋盘原始数据。io\_board从指定的串口读
+取棋盘，帮助信息如下：
+\begin{verbatim}
+$ io_board -h
+Usage: io_board [OPTION]... DEVICE
+io_board -- read from rs485 serial port
+  -h            display this help and exit
+  -t TIME       delay TIME (ms) after request. (default: 50 ms)
+  -n PASS       blind read PASS pass. (default 1)
+\end{verbatim}
+
+DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
+
+TIME选项指定了每次从串口发送读取要求后等待多少时间后再从串口读取反馈，
+单位是毫秒(ms)，默认为50毫秒。
+
+PASS选项指定了每次运行实际读取多少次，多次读取可以减少漏读的情况，但并
+不做统计，所以，此阶段多次读取不如在之后多次调用棋盘读取程序有意义。
+
+棋盘读取程序的输出格式如下：二进制打印到标准输出(stdout)，每四个字节存
+放一个点位的信息，若此点位无子则输出全为零，有子则为该子的ID码。
+
 \subsection{控制机器手：io\_hand}
+
+
 \subsection{查看棋盘：catboard}
 \subsection{学习棋盘和棋子：learn\_brd}
 

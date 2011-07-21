@@ -34,13 +34,13 @@ void prompt_human(void)
 
 void print_board(char *board) {
     int i, j;
+    printf("\n");
     for (i = BD_RANKS - 1; i >= 0; --i) {
-        printf("\n");
         for (j = 0; j < BD_FILES; ++j) {
             printf("%c", board[i*BD_FILES+j]);
         }
+        printf("\n");
     }
-    printf("\n");
 }
 
 int set_phyboard(char *board)

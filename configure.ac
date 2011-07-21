@@ -10,6 +10,7 @@ AM_INIT_AUTOMAKE(robotxq ,0.1.0)
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 # Checks for libraries.
 

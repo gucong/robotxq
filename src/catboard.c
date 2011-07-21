@@ -12,6 +12,7 @@ void print_help(char *argv0) {
     printf("Usage: %s [OPTION]... DEVICE\n", argv0);
     puts  ("catboard -- print board to stdout");
     puts  ("  -h            display this help and exit");
+    puts  ("  -F            also print fen string (partial)");
     puts  ("  -r READER     use READER as the program to read the board in");
     puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
     puts  ("  -n PASS       read PASS pass referencing BRD_FILE. (default 4)");
@@ -37,10 +38,11 @@ int main(int argc, char **argv)
     char *reader = "io_board";
     char *brd_file = brd_buf;
     int pass = 4;
+    int F = 0;
 
     /* argument parsing */
     int opt;
-    while ((opt = getopt(argc, argv, "hr:b:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "hr:b:n:F")) != -1) {
         switch (opt) {
         case 'r':
             reader = optarg;
@@ -50,6 +52,9 @@ int main(int argc, char **argv)
             break;
         case 'n':
             pass = atoi(optarg);
+            break;
+        case 'F':
+            F = 1;
             break;
         case 'h':
             print_help(argv[0]);
@@ -77,15 +82,25 @@ int main(int argc, char **argv)
     char board[90];
     read_board(board, pass);
 
+    /* memcpy(board, */
+    /*        fen_to_board("rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1") */
+    /*        , BD_SIZE); */
+
     /* print board */
     int i, j;
+    printf("\n");
     for (i = BD_RANKS - 1; i >= 0; --i) {
-        printf("\n");
         for (j = 0; j < BD_FILES; ++j) {
             printf("%c", board[i*BD_FILES+j]);
         }
+        printf("\n");
     }
-    printf("\n");
+
+    if (F) {
+        printf("\n");
+        char fen_setup[128];
+        printf("%s\n", board_to_fen1(board, fen_setup));
+    }
 
     return 0;
 }    

@@ -51,6 +51,7 @@
 #define TO_B tolower
 
 char *fen_to_board(const char *fen_setup);
+char *board_to_fen1(const char *board, char *fen_setup);
 
 int extract_move(const char *prev_board, const char *cur_board, char *move);
 

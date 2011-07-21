@@ -70,6 +70,33 @@ char *fen_to_board(const char *fen_setup)
     }
 }
 
+char *board_to_fen1(const char *board, char *fen_setup)
+{
+    if (! board)
+        return fen_setup;
+    int p = 0;
+    int i, j;
+    int rank;
+    for (rank = BD_RANKS - 1; rank >= 0; --rank) {
+        j = '0';
+        for (i = rank * BD_FILES; i < (rank + 1) * BD_FILES; ++i) {
+            if (board[i] == BD_EMPTY)
+                ++j;
+            else if (j == '0')
+                fen_setup[p++] = board[i];
+            else {
+                fen_setup[p++] = j;
+                j = '0';
+                fen_setup[p++] = board[i];
+            }
+        }
+        if (j != '0')
+            fen_setup[p++] = j;
+        fen_setup[p++] = rank? '/' : 0;
+    }
+    return fen_setup;
+}
+
 int extract_move(const char *prev_board, const char *cur_board, char *move)
 {
     int gone[1], appear[1], change[1];
