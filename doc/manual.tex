@@ -16,7 +16,7 @@
 \renewcommand*\contentsname{目录}
 
 \usepackage{cchess}
-\usepackage[margin=3.5cm]{geometry}
+%\usepackage[margin=3.5cm]{geometry}
 \usepackage{hyperref}
 
 \title{机器人象棋程序手册}
@@ -28,10 +28,11 @@
 
 
 \section{概述}
-此手册的目的是提供使用和理解此计算机中国象棋程序所必需的信息。此组程序
-所做的工作包括：人机象棋对弈流程跟踪、读取棋盘(串口)、发送机器手控制信
-息(串口)、象棋运算引擎(eleeye\_xb)以及一个学习棋盘和棋子的辅助程序。
-以上各部分可独立调试运作，也能相互配合完成整个任务。
+此手册的目的是提供使用和理解此计算机中国象棋程序所必需的信息。
+
+此组程序组包括：人机象棋对弈流程跟踪、读取棋盘(串口)、发送机器手控制信
+息(串口)、象棋运算引擎(eleeye\_xb)以及一个学习棋盘和棋子的辅助程序，一
+个打印棋盘的工具。以上各部分可独立调试运作，也能相互配合完成整个任务。
 
 此程序设计运行于32位Linux操作系统 \footnote{一个自由，免费，开放源代码
   的Unix操作系统内核。包含一定组件、开发工具、应用程序的Linux操作系统称
@@ -184,19 +185,20 @@ xq.fen保存起始局面列表。开始时的局面从中随机选取。其格�
 个FEN格式串(见\ref{fen})，每个占一行；``end''，独占一行；之后的内容不会
 被读取，可以用来写注释或存放暂时不用的开始局面。
 
-xq.brd保存棋盘以及棋子的对应表。其可用棋盘和棋子学习程序learn\_brd生成，
-也可手动对学习中的错误进行修改。第一行为棋盘对应表，其中的数字按一维形
-式(见\ref{onedim})排列，数字表示该棋盘位置在原始数据中的排列位置。第二
-行和第三行为棋子对应表。第三行中的数字为棋子的ID码，按第二行的中棋子的
-顺序排列。
+xq.brd保存棋盘以及棋子的对应表。棋盘读取程序(如io\_board)只输出原始数据，
+并不进行处理，要得到可被其它程序使用的棋盘和棋子排列，就要使用对应表来
+转化。该文件可用棋盘和棋子学习程序learn\_brd生成，也可手动对学习中的错
+误进行修改。第一行为棋盘对应表，其中的数字按一维形式(见\ref{onedim})排
+列，数字表示该棋盘位置在原始数据中的排列位置。第二行和第三行为棋子对应
+表。第三行中的数字为棋子的ID码，按第二行的中棋子的顺序排列。
 
-各程序若要用到这些配置文件，则按如下顺序调取：若程序参数指定，则用此文
-件；否则，若 \~\ /.robotxq 文件夹下存在，则用此文件；否则使用编译时指定的
-系统配置文件夹(sysconfdir)下的预装的配置文件。
+各程序若要用到这些配置文件，则按如下顺序调取：若有程序参数指定，则用所
+指定的文件；否则，若\verb|~/.robotxq|文件夹下存在，则用此文件；否则使用
+编译时指定的系统配置文件夹(sysconfdir)下的预装的配置文件。
 
 所以，用户可以把需要的配置文件保存
-到\~\ /.robotxq/xq.fen和\~\ /.robotxq/xq.brd，这样，各程序就会自动优先调取它
-们，而不必每次都在参数中指定。
+到\verb|~/.robotxq/xq.fen|和\verb|~/.robotxq/xq.brd|，这样，各程序就会
+自动优先调取它们，而不必每次都在参数中指定。
 
 \subsection{人机象棋对弈流程跟踪(主程序)：robotxq}
 人机象棋对弈流程跟踪程序的帮助信息如下：
@@ -250,22 +252,30 @@ FEN\_FILE选项用来指定起始局面列表文件，BRD\_FILE选项用来指�
 此程序默认的引擎Eleeye(Elephant Eye，\url{http://www.xqbase.com})本身是
 一个的ucci协议引擎。通过对其修改，使其成为了原生的xboard协议引擎，称
 为eleeye\_xb。eleeye\_xb引擎实现了绝大部分xboard协议的命令，具备完整的
-着法合法性检查。暂时缺少的功能是利用对手时间思考(ponder)。
+对手着法合法性检查。暂时缺少的功能是利用对手时间思考(ponder)。
 
 另外，通过适配
 器ucci2wb(\url{http://home.hccnet.nl/h.g.muller/XQadapters.html})，任
-一ucci引擎可以转化为xboard引擎，但转化后的引擎不具着法合法性检查。
+一ucci引擎可以转化为xboard引擎，但用此适配器转化后的引擎不具着法合法性
+检查。
 
 \subsection{棋盘读取程序：io\_board}
-棋盘读取程序运行后返回一串二进制的棋盘原始数据。io\_board从指定的串口读
-取棋盘，帮助信息如下：
+\label{iob}
+棋盘读取程序运行后打印一串二进制的棋盘原始数据，然后退出。棋盘读取程序
+的输出格式如下：二进制打印到标准输出(stdout)，每四个字节存放一个点位的
+信息，若此点位无子则输出全为零，有子则为该子的ID码。
+
+棋盘读取程序并不限于读串口的io\_board，比如也可以有从特定文件读取的，方
+便在没有物理棋盘的情况下测试。当棋盘串口协议变化时、迁移到其它操作系统
+时也可以编写相应的棋盘读取程序以作替换。
+
+io\_board从指定的串口读取棋盘，帮助信息如下：
 \begin{verbatim}
 $ io_board -h
 Usage: io_board [OPTION]... DEVICE
 io_board -- read from rs485 serial port
   -h            display this help and exit
   -t TIME       delay TIME (ms) after request. (default: 50 ms)
-  -n PASS       blind read PASS pass. (default 1)
 \end{verbatim}
 
 DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
@@ -273,39 +283,312 @@ DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
 TIME选项指定了每次从串口发送读取要求后等待多少时间后再从串口读取反馈，
 单位是毫秒(ms)，默认为50毫秒。
 
-PASS选项指定了每次运行实际读取多少次，多次读取可以减少漏读的情况，但并
-不做统计，所以，此阶段多次读取不如在之后多次调用棋盘读取程序有意义。
-
-棋盘读取程序的输出格式如下：二进制打印到标准输出(stdout)，每四个字节存
-放一个点位的信息，若此点位无子则输出全为零，有子则为该子的ID码。
-
 \subsection{控制机器手：io\_hand}
 
+暂无。
 
 \subsection{查看棋盘：catboard}
+
+查看棋盘程序catboard是独立使用的辅助程序，除了纯粹查看棋盘，也可用来检
+验棋盘及连接装置是否正常工作、初步检验棋盘和棋子的对照表学习是否正
+确(xq.brd文件)、快速获得棋盘上局面的FEN格式串(用来添加到xq.fen)等。帮助
+性息如下：
+\begin{verbatim}
+Usage: catboard [OPTION]... DEVICE
+catboard -- print board to stdout
+  -h            display this help and exit
+  -r READER     use READER as the program to read the board in
+  -b BRD_FILE   use BRD_FILE as the board configuration file
+  -n PASS       read PASS pass referencing BRD_FILE. (default 4)
+\end{verbatim}
+
+DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
+
+READER选项用来指定棋盘读取程序。默认为io\_board。调用此读取程序时，主程
+序会自动添加所指定串囗设备DEVICE，不用手动添加。
+
+BRD\_FILE选项用来指定棋盘棋子对照表文件。它们的默认位置见\ref{conf}中的
+说明。
+
+PASS选项指定了每次运行实际调用棋盘读取程序多少次。由于有对照表文件可以
+参考，所以多次调用对漏读、多读、错读都能起效。由于错读成其它棋子的可能
+性很小，所以不做统计。
+
 \subsection{学习棋盘和棋子：learn\_brd}
+棋盘和棋子学习程序learn\_brd是独立运行的辅助程序。可用来生成xq.brd配置
+文件(见\ref{conf})。其帮助信息如下：
+\begin{verbatim}
+Usage: learn_brd [OPTION]... DEVICE
+learn_brd -- learn board and/or pieces interactively
+OPTION:
+  -h            display this help and exit
+  -P            learn pieces
+  -B            learn board
+  -i BRD_IN     use BRD_IN for input, with -P
+                if -B is specified, it is ignored
+  -o BRD_OUT    use BRD_OUT for output
+  -r READER     use READER as the program to read the board in
+  -n PASS       read PASS pass for piece learning,  with -P (default 5)
+\end{verbatim}
 
+DEVICE用来指定读取棋盘的串口设备，见\ref{dev}。
 
+-P是学习棋子的开关，-B是学习棋盘的开关。也就是说，用户可以选择只学习棋
+子、只学习棋盘或学习两者。
 
+BRD\_IN选项用来指定读取的对照表文件。它们的默认位置见\ref{conf}中的说明。
+读取的对照表文件的作用是，在只学习棋子不学习棋盘时，使用此文件中的棋盘
+对照信息。
 
+BRD\_OUT选项用来指定输出的对照表文件。当没有指定时，程序会把对照信息直
+接输出到标准输出(stdout)，请注意查看。
 
+READER选项用来指定棋盘读取程序。默认为io\_board。调用此读取程序时，主程
+序会自动添加所指定串囗设备DEVICE，不用手动添加。
 
-
-
-
-
-
-
-
-
+PASS选项指定了学习棋子时调用棋盘读取程序多少次。多次调用可减少漏读，而
+多读对棋子学习没有影响。但由于此时没有棋子对照表可参考，错读需要通过统
+计来排除。也就是每个位置选取除空白以外出现次数最多的结果。
 
 \clearpage
 \appendix
-\section{Unix命令行的基本使用}
+\section{Linux及Shell的基本使用}
 \label{app1}
-\subsection{设备文件}
+
+这里介绍的仅限于本程序的基本使用所需的常识，对像是没有接触过Linux及其命
+令行界面的人群。以下的介绍基于Linux和bash。
+
+在图形界面下，可以通过打开``终端''程序来使用shell命令行界面。打开以后会
+有一个提示符，用以提示用户输入。bash的提示符默认为
+\begin{verbatim}
+[user@host cwd]$ 
+\end{verbatim}
+其中user是当前用户名，host是计算机名，cwd是当前的工作目录。本文的示例中，
+提示符将一律简写成\verb|$|，也就是说，以\verb|$|开头的行为用户的输入，
+输入的内容为除行首\verb|$|以外的部分。
+
+\subsection{文件系统}
+Linux系统有一个统一的文件树，称为文件系统，这不同于Microsoft Windows每
+个磁盘分区都有各自独立的文件树。Linux系统下各磁盘分区都会被挂载到文件树
+的某个位置，没有被其它磁盘分区挂载的目录默认与上一层目录位于同一磁盘分
+区上。
+
+``\verb|/|''表示这个唯一的根目录，\verb|/usr/|表示根目录下的usr子目
+录，\verb|/usr/share/|表示根目录下\verb|usr|子目录下的\verb|share|子目录，
+依此类推，就可以表示整个文件系统中的所有位置。
+
+除了以上从根目录开始的完整表达，还有一些特殊的目录：
+
+\begin{center}
+\begin{tabular}{p{3cm} p{8cm}}
+  \hline
+  \verb|./| &表示当前工作目录\\
+  \verb|../|&表示当前工作目录的上一层目录\\
+  \verb|~/|&表示当前用户的家目录(用户名为user，则其家目录通常为\verb|/home/user/|)\\
+  \hline
+\end{tabular}
+\end{center}
+
+如果目录名以\verb|.|开头，则其为隐藏目录，比
+如，\verb|~/.robotxq/|就是当前用户的家目录下的一个隐藏文件。
+
+文件系统中的各个目录都有约定的用途，Linux发行版大都基本服从文件系统结构
+层次标准\footnote{Filesystem Hierarchy Standard,
+  FHS：\url{http://www.pathname.com/fhs/pub/fhs-2.3.html}}
+以下列举了部分目录的用途：
+
+\begin{center}
+\begin{tabular}{p{3cm} p{8cm}}
+  \hline
+  \verb|/|&整个文件系统层次结构的根目录。\\
+  \verb|/bin/|&必要命令的可执行文件。如：cat、ls、cp。\\
+  \verb|/sbin/|&必要系统命令的可执行文件。如：init、mount。\\
+  \verb|/dev/|&设备文件(见\ref{dev})。\\
+  \verb|/etc/|&系统范围内有效的文本配置文件。\\
+  \verb|/home/|&用户的家目录，存放用户的个人文件、个人设置。\\
+  \verb|/root/|&超级用户的家目录。\\
+  \verb|/usr/|&用户工具和应用程序。\\
+  \verb|/usr/bin/|&用户工具和应用程序的可执行文件。\\
+  \verb|/usr/share/|&用户工具和应用程序的数据。\\
+  \verb|/usr/share/doc/|&用户工具和应用程序的文档。\\
+  \hline
+\end{tabular}
+\end{center}
+
+\subsection{设备文件及串口}
 \label{dev}
-%%% 介绍 device node
-%%% 介绍 文件系统 / ~ 
+
+在类Unix操作系统中，设备文件系统允许软件通过标准输入输出(stdio)系统调用
+与驱动程序交互，从而简化了许多任务。设备文件是驱动程序的接口，而在文件
+系统中，它们就像是普通文件，对设备文件的读写就像是对普通文件的读写，但
+实际上是通过驱动程序对物理设备的操作。
+
+设备文件默认位于\verb|/dev/|目录下，伪设备(\verb|/dev/null|)、硬
+盘(\verb|/dev/sda|)、光驱(\verb|dev/sr0|)等都在这里，在这里不作展开。所
+有即插即用的设备在插上电脑时，其相应的设备文件会自动生成，而在拔除时，
+也会自动消失。
+
+当然，我们所需的串口设备也
+在\verb|/dev/|下，\verb|/dev/ttyS0|到\verb|/dev/ttyS3|就相当
+于DOS下的\verb|COM1|到\verb|COM4|。用USB转换的串口会成
+为\verb|/dev/ttyUSB0|、\verb|/dev/ttyUSB1|等，用其它方式命名的串口可能
+存在。
+
+那么如何检测设备文件对应的串口究竟是哪一个呢？可以用类似如下命令向串口
+写数据(其中\verb|some_file|是任意普通文件)，然后检测哪个串口在发送信
+息(DTR高电平)：
+\begin{verbatim}
+$ cp some_file /dev/ttyS1
+\end{verbatim}
+
+以上的命令其实就是复制文件的命令，这也体现了设备文件为硬件操作提供的方
+便。
+
+\subsection{运行程序}
+大多数shell下的命令都是位于文件系统中某个位置的可执行文件。当用户直接输
+入一个命令时，shell会在\verb|PATH|环境变量所包含的目录下查找该名称的可
+执行文件。以下命令可以查看\verb|PATH|包含哪些目录(冒号分隔)：
+\begin{verbatim}
+$ echo $PATH
+\end{verbatim}
+
+但是，如果要运行的可执行文件不在\verb|PATH|包含的目录内，则需要指定目录。
+如：
+\begin{verbatim}
+$ /usr/bin/ls
+\end{verbatim}
+\begin{verbatim}
+$ ./some_executable
+\end{verbatim}
+
+Linux不是以扩展名来判断文件是否为可执行文件的(不像Microsoft
+Windows下.exe是可执行文件)，而是文件是否有可执行属性。以下命令可查看文
+件下所有文件的详细信息，包括属性：
+\begin{verbatim}
+$ ls -l /home
+total 300
+dr-xrwx---   4 ftpshare gucong   4096 Feb 14 21:02 ftpshare/
+drwx------ 144 gucong   gucong 274432 Jul 23 00:16 gucong/
+drwx------   2 root     root    16384 Dec 29  2009 lost+found/
+\end{verbatim}
+
+第一项为属性，第三项为所属用户，第四项为所属用户组。属性串的意义：第一
+位是文件类型(短横杠表示普通文件、\verb|d|为文件夹等等)，接下来三位是所
+属用户的读、写、可执行权，再接下来三位是所属用户组的读、写、可执行权，
+最后三位是其他用户的读、写、可执行权，除第一位外各位上短横杠(-)表示无此
+权力，反之有权力。
+
+回到主题，作为一个普通用户，除自己的家目录中文件，对大多数文件是无权修
+改、添加、删除的，这是为了保护系统不受误操作或恶意操作的影响。偶尔需要
+维护系统、安装软件时怎么办呢？root是拥有至高无上权力的用户，我们可以
+以root用户身份登录系统来做这些操作，在得到授权后，普通用户也可以临时充
+当root用户来执行一两条命令，做法是在命令前加上\verb|sudo|。例如(注意！
+这条命令会把整个文件系统都删除，千万不要这样做！)：
+\begin{verbatim}
+$ sudo rm /
+\end{verbatim}
+
+有的时候，你可能会想结束一个正在执行过程中的命令，或者有的命令本身是无限循
+环的，比如：
+\begin{verbatim}
+$ ping www.kernel.org
+\end{verbatim}
+按``Ctrl c''可以中止大部分命令。
+
+命令大多提供选项、开关、执行对象等供使用者指定。选项大多由短横杠开头(短
+选项通常用单横杠，长选项通常用双横杠)。有的要求在后面跟选项的内容，长选
+项跟内容通常用等于号(=)，短选项通常直接在空格后跟内容。当然，以上只是通
+常的约定，每个程序提供哪些选项、执行的格式怎样还是要通过阅读帮助信息来
+获得。
+
+当你不知道如何使用一个命令时，你可以查看帮助，有以下几种可能方式：
+内建帮助，如
+\begin{verbatim}
+$ some_command -h
+\end{verbatim}
+或长选项版本
+\begin{verbatim}
+$ some_command --help
+\end{verbatim}
+手册(通常比内建帮助详细)，如
+\begin{verbatim}
+$ man some_command
+\end{verbatim}
+还可以搜索互联网，询问老手等等。
+
+举个例子：先查看帮助信息
+\begin{verbatim}
+$ mkdir --help
+Usage: mkdir [OPTION]... DIRECTORY...
+Create the DIRECTORY(ies), if they do not already exist.
+
+Mandatory arguments to long options are mandatory for short options too.
+-m, --mode=MODE   set file mode (as in chmod), not a=rwx - umask
+-p, --parents     no error if existing, make parent directories as needed
+-v, --verbose     print a message for each created directory
+-Z, --context=CTX  set the SELinux security context of each created
+                      directory to CTX
+    --help     display this help and exit
+    --version  output version information and exit
+
+Report mkdir bugs to bug-coreutils@gnu.org
+GNU coreutils home page: <http://www.gnu.org/software/coreutils/>
+General help using GNU software: <http://www.gnu.org/gethelp/>
+For complete documentation, run: info coreutils 'mkdir invocation'
+\end{verbatim}
+然后执行所需的命令
+\begin{verbatim}
+$ mkdir -m 755 mydir
+\end{verbatim}
+或长选项版本
+\begin{verbatim}
+$ mkdir --mode=755 mydir
+\end{verbatim}
+
+以下列举部分常用命令，具体使用方法请查看各自帮助信息
+
+\begin{center}
+\begin{tabular}{p{3cm} p{8cm}}
+  \hline
+  \verb|ls| & 列出文件信息，常用选项\verb|-l|、\verb|-a|\\
+  \verb|cd| & 变换工作目录\\
+  \verb|cp| & 复制文件，常用选项\verb|-r|\\
+  \verb|rm| & 删除文件，常用选项\verb|-r|\\
+  \verb|mv| & 移动、重命名文件，常用选项\verb|-r|\\
+  \verb|cat| & 打印文件内容\\
+  \verb|chgrp| & 修改文件的所属用户组\\
+  \verb|chown| & 修改文件的所属用户\\
+  \verb|chmod| & 修改文件的属性\\
+  \hline
+\end{tabular}
+\end{center}
+
+\subsection{更高级的使用}
+
+这节简述shell的使用中更灵活更强大的一些功能，作为延伸。
+
+每一个程序都像是管道上的一个处理站，信息从标准输入(stdin)流入，结果从标
+准输出(stdout)流出，出错信息从标准错误输出(stderr)流出。这种抽象就使得
+在命令行中协同使用各种命令变得异常方便，用不着手动复制粘贴了。
+
+比如，以下命令把\verb|command_a|的输出直接作为\verb|command_b|的输入：
+\begin{verbatim}
+$ command_a | command_b
+\end{verbatim}
+
+比如，以下命令将\verb|command_a|所输的错误信息丢到垃圾桶，只保留标准输
+出：
+\begin{verbatim}
+$ command_a 2>& /dev/null
+\end{verbatim}
+
+比如，以下命令将\verb|command_a|的标准输出保存到\verb|some_file|
+\begin{verbatim}
+$ command_a > some_file
+\end{verbatim}
+
+shell本身还能作为一种编程语言，它具有基本的流控制结构(for，if等等)，再
+加上功能各异命令工具，以及命令之间互相交互合作的管道机制，使得文字命令
+行shell成为操作计算机的一个利器。
 
 \end{document}

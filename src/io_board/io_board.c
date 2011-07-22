@@ -1,6 +1,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
@@ -60,23 +61,17 @@ void print_help(char *argv0) {
     puts  ("io_board -- read from rs485 serial port");
     puts  ("  -h            display this help and exit");
     puts  ("  -t TIME       delay TIME (ms) after request. (default: 50 ms)");
-    puts  ("  -n PASS       blind read PASS pass. (default 1)");
 }
 
 int main (int argc, char **argv)
 {
     struct termios tio;
 
-    int PASS_NR = 1;
-
     int opt;
-    while ((opt = getopt(argc, argv, "ht:n:")) != -1) {
+    while ((opt = getopt(argc, argv, "ht:")) != -1) {
         switch (opt) {
         case 't':
             RS485_DELAY_AFTER = atoi(optarg);
-            break;
-        case 'n':
-            PASS_NR = atoi(optarg);
             break;
         case 'h':
             print_help(argv[0]);
@@ -130,28 +125,24 @@ int main (int argc, char **argv)
 
     /* write and read */
     unsigned char idata[LINE_NR];
-    int inr = 35, i, j, pass;
+    int inr = 35, i, j;
     char odata[3] = {0x8c, 0xab};
 
-    int data_save[DATA_NR];
+    int32_t data_save[DATA_NR];
     memset(data_save, 0, DATA_NR * sizeof(int));
 
-    for (pass = 0; pass < PASS_NR; ++pass) {
-        for (j = 1; j <= DATA_NR / 8; ++j) {
-            odata[2] = j;
-            if (write_rs485(port_fd, odata, 3) != 3)
-                write(STDERR_FILENO, "not 3\n", 6);
-            read(port_fd, idata, inr);
+    for (j = 1; j <= DATA_NR / 8; ++j) {
+        odata[2] = j;
+        if (write_rs485(port_fd, odata, 3) != 3)
+            write(STDERR_FILENO, "not 3\n", 6);
+        read(port_fd, idata, inr);
 
-            //printf("%.2x: ", idata[2]);
-            for (i = 3; i < inr; i+=4) {
-                //printf("%15d ", *(int *)(idata+i));
-                int index = (j-1) * 8 + (i-3) / 4;
-                if (data_save[index] == 0)
-                    data_save[index] = *(int *)(idata+i);
-            }
-            //printf("\n");
+        //printf("%.2x: ", idata[2]);
+        for (i = 3; i < inr; i+=4) {
+            //printf("%15d ", *(int *)(idata+i));
+            data_save[(j-1) * 8 + (i-3) / 4] = *(int32_t *)(idata+i);
         }
+        //printf("\n");
     }
 
     char *bytes = (char *)data_save;
