@@ -65,6 +65,7 @@ int read_board(char *board, int pass_nr)
     for (pass = 0; pass < pass_nr; ++pass) {
         /* read raw data */
         int phys_data[PHYSPTS];
+        memset(phys_data, 0, PHYSPTS * sizeof(int));
         if ((fp = popen(read_board_prog, "r")) <= 0) {
             perror("popen");
             return -1;

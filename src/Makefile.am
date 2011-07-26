@@ -1,4 +1,4 @@
-SUBDIRS = eleeye_xb io_board learn_brd
+SUBDIRS = eleeye_xb io learn_brd
 
 bin_PROGRAMS = robotxq catboard
 

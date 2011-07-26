@@ -9,6 +9,8 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <errno.h>
+#include <signal.h>
+#include <termios.h>
 
 #define MAXLINE 4096
 #define TIMEOUT 2    /* poll timeout in seconds */
@@ -26,6 +28,8 @@
 #endif
 
 #include "read_board.h"
+
+struct termios old_tio;
 
 void prompt_human(void)
 {
@@ -75,9 +79,11 @@ int set_phyboard(char *board)
 /*     return board; */
 /* } */
 
-void prompt_wait() {
+void prompt_wait()
+{
+    int c;
     printf("wait physical board ...\n");
-    getchar();
+    read(STDIN_FILENO, &c, 1);
 }    
 
 char *read_phyboard(int read)
@@ -303,6 +309,18 @@ int one_chess_game (char *fen_setup, char *engine)
     return 0;    /* not reached */
 }
 
+/* sig handler to restore stdin */
+static void sig_handler(int signo)
+{
+    if (tcgetattr(STDIN_FILENO, &old_tio) == -1) {
+        perror("tcgetattr");
+        exit(EXIT_FAILURE);
+    }
+    tcflush(STDIN_FILENO, TCOFLUSH);
+    tcflush(STDIN_FILENO, TCIFLUSH);
+    exit(EXIT_SUCCESS);
+}
+
 void print_help(char *argv0)
 {
     printf("Usage: %s [OPTION]... DEVICE\n", argv0);
@@ -313,6 +331,39 @@ void print_help(char *argv0)
     puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
     puts  ("  -r READER     use READER as the program to read the board in");
     puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
+}
+
+int tcset_noncanonical(int fd)
+{
+    struct termios tio;
+
+    if (tcgetattr(fd, &old_tio) == -1) {
+        perror("tcgetattr");
+        return 1;
+    }
+    memcpy(&tio, &old_tio, sizeof(struct termios));
+
+    if (signal(SIGTERM, sig_handler) == SIG_ERR) {
+        perror("register SIGTERM");
+        return 1;
+    }
+
+    if (signal(SIGINT, sig_handler) == SIG_ERR) {
+        perror("register SIGINT");
+        return 1;
+    }
+
+    tio.c_lflag |= ISIG;
+    tio.c_lflag &= ~(ICANON | ECHO);
+    tio.c_cc[VTIME] = 0;
+    tio.c_cc[VMIN] = 1;
+    if (tcsetattr(fd, TCSANOW ,&tio) == -1) {
+        perror("tcsetattr");
+        return 1;
+    }
+    tcflush(fd, TCOFLUSH);
+    tcflush(fd, TCIFLUSH);
+    return 0;
 }
 
 int main (int argc, char *argv[])
@@ -361,17 +412,17 @@ int main (int argc, char *argv[])
             break;
         case 'h':
             print_help(argv[0]);
-            return 0;
+            exit(EXIT_SUCCESS);
         default:
             print_help(argv[0]);
-            return 1;
+            exit(EXIT_FAILURE);
         }
     }
 
     if (optind >= argc) {
         fprintf(stderr, "expect device node after options\n");
         print_help(argv[0]);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     char *dev = argv[optind];
@@ -383,7 +434,7 @@ int main (int argc, char *argv[])
     FILE *fen_fp = fopen(fen_file, "r");
     if (fen_fp == NULL) {
         perror("open fen_file");
-        return 1;
+        exit(EXIT_FAILURE);
     }
     char fen_setup[128];
     int board_nr, board_idx;
@@ -401,7 +452,11 @@ int main (int argc, char *argv[])
     char reader_buf[1024];
     snprintf(reader_buf, 1024, "%s %s", reader, dev);
     if (init_read_board(reader_buf, brd_file) != 0)
-        return 1;
+        exit(EXIT_FAILURE);
+
+    /* set stdin to non-canonical mode */
+    if (tcset_noncanonical(STDIN_FILENO) != 0)
+        exit(EXIT_FAILURE);
 
     /* main loop */
     while(1) {
@@ -431,6 +486,4 @@ int main (int argc, char *argv[])
             break;
         }
     }
-    free(line_offset);
-    return 0;
 }
