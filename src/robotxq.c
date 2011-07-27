@@ -45,6 +45,7 @@ void print_board(char *board) {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 int set_phyboard(char *board)
@@ -313,7 +314,7 @@ int one_chess_game (char *fen_setup, char *engine)
 static void sig_handler(int signo)
 {
     if (tcgetattr(STDIN_FILENO, &old_tio) == -1) {
-        perror("tcgetattr");
+        perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
     }
     tcflush(STDIN_FILENO, TCOFLUSH);
@@ -354,7 +355,7 @@ int tcset_noncanonical(int fd)
     }
 
     tio.c_lflag |= ISIG;
-    tio.c_lflag &= ~(ICANON | ECHO);
+    tio.c_lflag &= ~(ICANON);
     tio.c_cc[VTIME] = 0;
     tio.c_cc[VMIN] = 1;
     if (tcsetattr(fd, TCSANOW ,&tio) == -1) {
