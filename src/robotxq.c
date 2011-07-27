@@ -16,7 +16,6 @@
 #define TIMEOUT 2    /* poll timeout in seconds */
 
 /* choose variant */
-//#define GAME_CHESS
 #define GAME_XIANGQI
 
 #ifdef GAME_CHESS
@@ -33,8 +32,15 @@ struct termios old_tio;
 
 void prompt_human(void)
 {
-    printf("Your Turn.\n");
+    printf("轮到你了，请走子！\n");
 }
+
+void prompt_wait()
+{
+    int c;
+    printf("等待完成...\n");
+    read(STDIN_FILENO, &c, 1);
+}    
 
 void print_board(char *board) {
     int i, j;
@@ -45,6 +51,7 @@ void print_board(char *board) {
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 int set_phyboard(char *board)
@@ -55,7 +62,7 @@ int set_phyboard(char *board)
     /* place pieces */
     /////////////
     /* the following implementation is for testing */
-    printf("set physical board\n");
+    printf("摆棋\n");
     print_board(board);
     return 0;
 }
@@ -79,21 +86,14 @@ int set_phyboard(char *board)
 /*     return board; */
 /* } */
 
-void prompt_wait()
-{
-    int c;
-    printf("wait physical board ...\n");
-    read(STDIN_FILENO, &c, 1);
-}    
-
 char *read_phyboard(int read)
 {
     static char board[BD_SIZE];
     if (!read)
         return board;
     if (read_board(board, 4) == -1)
-        printf("warning: unable to read physical board");
-    printf("board read\n");
+        fprintf(stderr, "警告: 无法读取棋盘\n");
+    printf("棋盘已读取\n");
     return board;
 }
 
@@ -237,8 +237,8 @@ int one_chess_game (char *fen_setup, char *engine)
             }
             fgets(line, MAXLINE, from_engine);
             ///////////////////debug
-            printf("engine<<  move %s\n", emove);
-            printf("engine>>  %s\n", line);
+            // printf("engine<<  move %s\n", emove);
+            printf("机器人着法  %s\n", line);
             ///////////////////
             token = strtok(line, " \n");
             if (strcmp(token, "move") == 0) {
@@ -312,8 +312,8 @@ int one_chess_game (char *fen_setup, char *engine)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
-    if (tcgetattr(STDIN_FILENO, &old_tio) == -1) {
-        perror("tcgetattr");
+    if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old_tio) == -1) {
+        perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
     }
     tcflush(STDIN_FILENO, TCOFLUSH);
@@ -321,6 +321,21 @@ static void sig_handler(int signo)
     exit(EXIT_SUCCESS);
 }
 
+<<<<<<< HEAD
+=======
+void print_help(char *argv0)
+{
+    printf("Usage: %s [OPTION]... BOARD_DEV HAND_DEV\n", argv0);
+    puts  ("robotxq -- Robot plays Xiangqi");
+    puts  ("OPTION:");
+    puts  ("  -h            display this help and exit");
+    puts  ("  -e ENGINE     use ENGINE as the engine program");
+    puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
+    puts  ("  -r READER     use READER as the program to read the board in");
+    puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
+}
+
+>>>>>>> 82eb7c31200859af696cc32ed83e7ceb5f531595
 int tcset_noncanonical(int fd)
 {
     struct termios tio;
@@ -345,6 +360,7 @@ int tcset_noncanonical(int fd)
     tio.c_lflag &= ~(ICANON | ECHO);
     tio.c_cc[VTIME] = 0;
     tio.c_cc[VMIN] = 1;
+    tio.c_cc[VINTR] = 3;
     if (tcsetattr(fd, TCSANOW ,&tio) == -1) {
         perror("tcsetattr");
         return 1;
@@ -419,13 +435,14 @@ int main (int argc, char *argv[])
         }
     }
 
-    if (optind >= argc) {
+    if (optind + 1 >= argc) {
         fprintf(stderr, "expect device node after options\n");
         print_help(argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    char *dev = argv[optind];
+    char *board_dev = argv[optind];
+    char *hand_dev = argv[optind+1];
 
     /* printf("ENGINE:   %s\nREADER:   %s\nFEN_FILE: %s\nBRD_FILE: %s\n", */
     /*        engine, reader, fen_file, brd_file); */
@@ -450,7 +467,7 @@ int main (int argc, char *argv[])
 
     /* init board reader */
     char reader_buf[1024];
-    snprintf(reader_buf, 1024, "%s %s", reader, dev);
+    snprintf(reader_buf, 1024, "%s %s", reader, board_dev);
     if (init_read_board(reader_buf, brd_file) != 0)
         exit(EXIT_FAILURE);
 
@@ -465,12 +482,12 @@ int main (int argc, char *argv[])
         fgets(fen_setup, 126, fen_fp);
         switch (one_chess_game(fen_setup, engine)) {
         case 1:
-            printf("You lose! Illegal move.\n");
+            printf("你输了！非法着法\n");
             puts("dump board:");
             print_board(read_phyboard(0));
             break;
         case 2:
-            printf("You win! Machine resgined.\n");
+            printf("你赢了！机器人认输了\n");
             break;
         case 3:
             printf("You win!\n");
