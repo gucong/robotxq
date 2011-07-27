@@ -16,7 +16,6 @@
 #define TIMEOUT 2    /* poll timeout in seconds */
 
 /* choose variant */
-//#define GAME_CHESS
 #define GAME_XIANGQI
 
 #ifdef GAME_CHESS
@@ -35,6 +34,13 @@ void prompt_human(void)
 {
     printf("轮到你了，请走子！\n");
 }
+
+void prompt_wait()
+{
+    int c;
+    printf("等待完成...\n");
+    read(STDIN_FILENO, &c, 1);
+}    
 
 void print_board(char *board) {
     int i, j;
@@ -80,21 +86,14 @@ int set_phyboard(char *board)
 /*     return board; */
 /* } */
 
-void prompt_wait()
-{
-    int c;
-    printf("wait physical board ...\n");
-    read(STDIN_FILENO, &c, 1);
-}    
-
 char *read_phyboard(int read)
 {
     static char board[BD_SIZE];
     if (!read)
         return board;
     if (read_board(board, 4) == -1)
-        printf("warning: unable to read physical board");
-    printf("board read\n");
+        fprintf(stderr, "警告: 无法读取棋盘\n");
+    printf("棋盘已读取\n");
     return board;
 }
 
@@ -238,8 +237,8 @@ int one_chess_game (char *fen_setup, char *engine)
             }
             fgets(line, MAXLINE, from_engine);
             ///////////////////debug
-            printf("engine<<  move %s\n", emove);
-            printf("engine>>  %s\n", line);
+            // printf("engine<<  move %s\n", emove);
+            printf("机器人着法  %s\n", line);
             ///////////////////
             token = strtok(line, " \n");
             if (strcmp(token, "move") == 0) {
@@ -468,12 +467,12 @@ int main (int argc, char *argv[])
         fgets(fen_setup, 126, fen_fp);
         switch (one_chess_game(fen_setup, engine)) {
         case 1:
-            printf("You lose! Illegal move.\n");
+            printf("你输了！非法着法\n");
             puts("dump board:");
             print_board(read_phyboard(0));
             break;
         case 2:
-            printf("You win! Machine resgined.\n");
+            printf("你赢了！机器人认输了\n");
             break;
         case 3:
             printf("You win!\n");
