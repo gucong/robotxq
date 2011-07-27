@@ -313,7 +313,7 @@ int one_chess_game (char *fen_setup, char *engine)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
-    if (tcgetattr(STDIN_FILENO, &old_tio) == -1) {
+    if (tcsetattr(STDIN_FILENO, &old_tio) == -1) {
         perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
     }
@@ -324,7 +324,7 @@ static void sig_handler(int signo)
 
 void print_help(char *argv0)
 {
-    printf("Usage: %s [OPTION]... DEVICE\n", argv0);
+    printf("Usage: %s [OPTION]... BOARD_DEV HAND_DEV\n", argv0);
     puts  ("robotxq -- Robot plays Xiangqi");
     puts  ("OPTION:");
     puts  ("  -h            display this help and exit");
@@ -355,9 +355,10 @@ int tcset_noncanonical(int fd)
     }
 
     tio.c_lflag |= ISIG;
-    tio.c_lflag &= ~(ICANON);
+    tio.c_lflag &= ~(ICANON | ECHO);
     tio.c_cc[VTIME] = 0;
     tio.c_cc[VMIN] = 1;
+    tio.c_cc[VINTR] = 3;
     if (tcsetattr(fd, TCSANOW ,&tio) == -1) {
         perror("tcsetattr");
         return 1;
@@ -420,13 +421,14 @@ int main (int argc, char *argv[])
         }
     }
 
-    if (optind >= argc) {
+    if (optind + 1 >= argc) {
         fprintf(stderr, "expect device node after options\n");
         print_help(argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    char *dev = argv[optind];
+    char *board_dev = argv[optind];
+    char *hand_dev = argv[optind+1];
 
     /* printf("ENGINE:   %s\nREADER:   %s\nFEN_FILE: %s\nBRD_FILE: %s\n", */
     /*        engine, reader, fen_file, brd_file); */
@@ -451,7 +453,7 @@ int main (int argc, char *argv[])
 
     /* init board reader */
     char reader_buf[1024];
-    snprintf(reader_buf, 1024, "%s %s", reader, dev);
+    snprintf(reader_buf, 1024, "%s %s", reader, board_dev);
     if (init_read_board(reader_buf, brd_file) != 0)
         exit(EXIT_FAILURE);
 
