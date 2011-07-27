@@ -313,7 +313,7 @@ int one_chess_game (char *fen_setup, char *engine)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
-    if (tcsetattr(STDIN_FILENO, &old_tio) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old_tio) == -1) {
         perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
     }
