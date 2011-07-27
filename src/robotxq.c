@@ -33,7 +33,7 @@ struct termios old_tio;
 
 void prompt_human(void)
 {
-    printf("Your Turn.\n");
+    printf("轮到你了，请走子！\n");
 }
 
 void print_board(char *board) {
@@ -56,7 +56,7 @@ int set_phyboard(char *board)
     /* place pieces */
     /////////////
     /* the following implementation is for testing */
-    printf("set physical board\n");
+    printf("摆棋\n");
     print_board(board);
     return 0;
 }
