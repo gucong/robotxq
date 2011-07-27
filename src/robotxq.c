@@ -321,18 +321,6 @@ static void sig_handler(int signo)
     exit(EXIT_SUCCESS);
 }
 
-void print_help(char *argv0)
-{
-    printf("Usage: %s [OPTION]... DEVICE\n", argv0);
-    puts  ("robotxq -- Robot plays Xiangqi");
-    puts  ("OPTION:");
-    puts  ("  -h            display this help and exit");
-    puts  ("  -e ENGINE     use ENGINE as the engine program");
-    puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
-    puts  ("  -r READER     use READER as the program to read the board in");
-    puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
-}
-
 int tcset_noncanonical(int fd)
 {
     struct termios tio;
@@ -364,6 +352,18 @@ int tcset_noncanonical(int fd)
     tcflush(fd, TCOFLUSH);
     tcflush(fd, TCIFLUSH);
     return 0;
+}
+
+void print_help(char *argv0)
+{
+    printf("Usage: %s [OPTION]... DEVICE\n", argv0);
+    puts  ("robotxq -- Robot plays Xiangqi");
+    puts  ("OPTION:");
+    puts  ("  -h            display this help and exit");
+    puts  ("  -e ENGINE     use ENGINE as the engine program");
+    puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
+    puts  ("  -r READER     use READER as the program to read the board in");
+    puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
 }
 
 int main (int argc, char *argv[])
