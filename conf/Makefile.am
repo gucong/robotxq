@@ -1,1 +1,1 @@
-dist_sysconf_DATA = xq.fen xq.brd
+dist_sysconf_DATA = xq.brd

@@ -32,13 +32,13 @@ struct termios old_tio;
 
 void prompt_human(void)
 {
-    printf("轮到你了，请走子！\n");
+    printf("Your Turn!\n");
 }
 
 void prompt_wait()
 {
     int c;
-    printf("等待完成...\n");
+    printf("waiting ...\n");
     read(STDIN_FILENO, &c, 1);
 }    
 
@@ -92,8 +92,8 @@ char *read_phyboard(int read)
     if (!read)
         return board;
     if (read_board(board, 4) == -1)
-        fprintf(stderr, "警告: 无法读取棋盘\n");
-    printf("棋盘已读取\n");
+        fprintf(stderr, "warning: unable to read board\n");
+    printf("board is read\n");
     return board;
 }
 
@@ -237,8 +237,8 @@ int one_chess_game (char *fen_setup, char *engine)
             }
             fgets(line, MAXLINE, from_engine);
             ///////////////////debug
-            // printf("engine<<  move %s\n", emove);
-            printf("机器人着法  %s\n", line);
+            printf("engine<<  move %s\n", emove);
+            printf("engine>>  %s\n", line);
             ///////////////////
             token = strtok(line, " \n");
             if (strcmp(token, "move") == 0) {
@@ -467,12 +467,12 @@ int main (int argc, char *argv[])
         fgets(fen_setup, 126, fen_fp);
         switch (one_chess_game(fen_setup, engine)) {
         case 1:
-            printf("你输了！非法着法\n");
+            printf("You lose! Illegal move.\n");
             puts("dump board:");
             print_board(read_phyboard(0));
             break;
         case 2:
-            printf("你赢了！机器人认输了\n");
+            printf("You win! Machine resigned.\n");
             break;
         case 3:
             printf("You win!\n");
