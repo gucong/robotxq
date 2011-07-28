@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <pwd.h>
 #include <errno.h>
+#include <string.h>
 
 #include "read_board.h"
 #include "xiangqi.h"
@@ -92,8 +93,7 @@ int main(int argc, char **argv)
     }
 
     printf("\n");
-    char fen_setup[128];
-    printf("%s\n", board_to_fen1(board, fen_setup));
+    printf("%s\n", board_to_fen1(board));
 
     return 0;
 }    

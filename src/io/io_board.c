@@ -156,10 +156,12 @@ int main (int argc, char **argv)
         //printf("\n");
     }
 
-    char *bytes = (char *)data_save;
-    for (i = 0; i < DATA_NR * 4; ++i) {
-        putchar(bytes[i]);
-    }
+    /* char *bytes = (char *)data_save; */
+    /* for (i = 0; i < DATA_NR * 4; ++i) { */
+    /*     putchar(bytes[i]); */
+    /* } */
+
+    write(STDOUT_FILENO, data_save, DATA_NR * 4);
 
     raise(SIGTERM);
 }

@@ -8,6 +8,7 @@
 #define BD_SIZE 90
 #define BD_FILES 9
 #define BD_RANKS 10
+#define BD_CAPPOS BD_SIZE
 
 #define BD_EMPTY     '_'
 #define BD_W_PAWN    'P'    /* or Soldier */
@@ -51,11 +52,12 @@
 #define TO_B tolower
 
 char *fen_to_board(const char *fen_setup);
-char *board_to_fen1(const char *board, char *fen_setup);
+
+char *board_to_fen1(const char *board);
 
 int extract_move(const char *prev_board, const char *cur_board, char *move);
 
-char *apply_move(const char *prev_board, const char *move);
+char *apply_move_phyboard(const char *prev_board, const char *move, FILE *fp);
 
 int diff_board(char *board1, char *board2);
 

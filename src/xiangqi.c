@@ -70,8 +70,9 @@ char *fen_to_board(const char *fen_setup)
     }
 }
 
-char *board_to_fen1(const char *board, char *fen_setup)
+char *board_to_fen1(const char *board)
 {
+    static char fen_setup[100];
     if (! board)
         return fen_setup;
     int p = 0;
@@ -151,7 +152,7 @@ int extract_move(const char *prev_board, const char *cur_board, char *move)
         return 2;
 }
 
-char *apply_move(const char *prev_board, const char *move)
+char *apply_move_phyboard(const char *prev_board, const char *move, FILE *fp)
 {
     static char board[BD_SIZE];
     if (board == NULL || move == NULL)
@@ -160,6 +161,13 @@ char *apply_move(const char *prev_board, const char *move)
     board[MOVE_FROM(move)] = BD_EMPTY;
     /* move / capture */
     board[MOVE_TO(move)] = prev_board[MOVE_FROM(move)];
+
+    /* outupt to fp */
+    if (prev_board[MOVE_TO(move)] != BD_EMPTY)
+        fprintf(fp, "%d %d\n", MOVE_TO(move), BD_CAPPOS);
+    fprintf(fp, "%d %d\n", MOVE_FROM(move), MOVE_TO(move));
+    fprintf(fp, "ping\n");
+
     return board;
 }
 
