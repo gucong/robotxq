@@ -29,28 +29,10 @@
 
 #include "read_board.h"
 #include "cpopen.h"
+#include "interface.h"
 
 struct termios old_tio;
 pid_t handctl_pid;
-
-/* extensible human interface */
-/* ----------------------------------- */
-void prompt_human(void)
-{
-    puts("Your Turn! 轮到你走子了！");
-}
-
-void prompt_setboard(void)
-{
-    puts("Please setup initial board! 请摆开局！");
-}
-
-void prompt_fixboard(void)
-{
-    puts("Please fix board position! 请纠正棋盘！");
-}
-
-/* ----------------------------------- */
 
 void wait_human()
 {
@@ -91,8 +73,11 @@ char *read_phyboard(int pass)
 
 int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
 {
-    FILE *fp[2];
+    /* prompt */
+    interface_prompt(SET_START);
 
+    /* init engine */
+    FILE *fp[2];
     pid_t engine_pid;
     if ((engine_pid = cpopen(fp, engine)) < 0) {
         perror("coprocess open");
@@ -112,8 +97,6 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         .events = POLLIN
     };
 
-
-    /* init engine */
     fputs("xboard\nprotover 2\n", to_engine);
     char line[MAXLINE];
     char *token;
@@ -171,7 +154,6 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
     int first_move = 1;
     char *cur_phyboard;
     char prev_phyboard[BD_SIZE];
-    prompt_setboard();
     wait_human();
     snprintf(fen_setup, 127, "%s %c - - 0 1",
              board_to_fen1((cur_phyboard = read_phyboard(10))),
@@ -187,7 +169,7 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         fgets(line, MAXLINE, from_engine);
         if (strncmp(line, "Illegal", 7) == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             return 6;    /* illegal initial position */
         }
     }
@@ -203,7 +185,7 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         int thres1 = 5, thres2 = 3;
 
         /* ask human player to go */
-        prompt_human();
+        interface_prompt(NEXT_MOVE);
         wait_human();
         cnt1 = cnt2 = 0;
         while ((ret = extract_move(prev_phyboard, (cur_phyboard = read_phyboard(4)), emove))
@@ -221,10 +203,10 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
                 ++cnt2;
                 if (cnt2 >= thres2) {
                     kill(engine_pid, SIGTERM);
-                    wait(NULL);
+                    waitpid(engine_pid, NULL, 0);
                     return 1;    /* Illegal physical move, return */
                 }
-                prompt_fixboard();
+                interface_prompt(FIX_BOARD);
                 wait_human();
                 break;
             }
@@ -261,17 +243,17 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         }
         else if (strcmp(token, "Illegal") == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             return 1;    /* illegal physical move */
         }
         else if (strcmp(token, "resign") == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             return 2;    /* machine resign, human win */
         }
         else if (strcmp(token, "1-0") == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             if (human_color == 'b')
                 return 4;    /* human lose */
             else
@@ -279,7 +261,7 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         }
         else if (strcmp(token, "0-1") == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             if (human_color == 'b')
                 return 3;    /* human win */
             else
@@ -287,7 +269,7 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
         }
         else if (strcmp(token, "1/2-1/2") == 0) {
             kill(engine_pid, SIGTERM);
-            wait(NULL);
+            waitpid(engine_pid, NULL, 0);
             return 5;    /* draw by rule */
         }
     }
@@ -296,7 +278,7 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
-    kill(handctl_pid, SIGTERM);
+    kill(0, SIGTERM);
     wait(NULL);
     if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old_tio) == -1) {
         perror("stdin tcgetattr");
@@ -422,6 +404,9 @@ int main (int argc, char *argv[])
     if ((handctl_pid = cpopen(handctl_fp, handctl_buf)) < 0)
         exit(EXIT_FAILURE);
 
+    /* init interface */
+    interface_init();
+
     /* set stdin to non-canonical mode */
     if (tcset_noncanonical(STDIN_FILENO) != 0)
         exit(EXIT_FAILURE);
@@ -431,24 +416,24 @@ int main (int argc, char *argv[])
     while(1) {
         switch (one_chess_game(fen_setup, engine, handctl_fp)) {
         case 1:
-            printf("You lose! Illegal move.\n");
+            interface_prompt(ILL_MOVE);
             puts("dump board:");
             print_board(read_phyboard(0));
             break;
         case 2:
-            printf("You win! Machine resigned.\n");
+            interface_prompt(OPP_RESIGN);
             break;
         case 3:
-            printf("You win!\n");
+            interface_prompt(WIN);
             break;
         case 4:
-            printf("You lose!\n");
+            interface_prompt(LOSE);
             break;
         case 5:
-            printf("Draw by rule...\n");
+            interface_prompt(DRAW);
             break;
         case 6:
-            printf("Illegal initial position: %s\n", fen_setup);
+            interface_prompt(ILL_START);
             puts("dump board:");
             print_board(read_phyboard(0));
             break;
