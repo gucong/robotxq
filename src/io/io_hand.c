@@ -61,9 +61,8 @@ static void sig_handler(int signo)
 
 void print_help(char *argv0) {
     printf("Usage: %s [OPTION]... DEVICE\n", argv0);
-    puts  ("io_board -- read from rs485 serial port");
+    puts  ("io_hand -- communicate with serial port");
     puts  ("  -h            display this help and exit");
-    puts  ("  -t TIME       delay TIME (ms) after request. (default: 0 ms)");
 }
 
 int main (int argc, char **argv)
@@ -135,16 +134,33 @@ int main (int argc, char **argv)
     tcflush(port_fd, TCIFLUSH);
 
     /* write and read */
+    char buf[LINE_NR];
+    char *tok;
     unsigned char idata[LINE_NR];
-    int inr = 3, onr = 3, i, j, ret;
-    char odata[3] = {0x8c, 0xab, 0x01};
+    int inr = 2, onr = 3, i, j, ret;
+    char odata[3] = {0x8d};
 
-    if (write_rs485(port_fd, odata, onr) != onr)
-        fprintf(stderr, "error: serial port %s I/O error\n", dev);
+    if (setvbuf(stdin, NULL, _IONBF, 0) != 0) {
+        perror("setvbuf");
+        exit(EXIT_FAILURE);    /* setvbuf error */
+    }
+    if (setvbuf(stdout, NULL, _IONBF, 0) != 0) {
+        perror("setvbuf");
+        exit(EXIT_FAILURE);    /* setvbuf error */
+    }
 
-    ret = read(port_fd, idata, inr);
-
-    write(STDOUT_FILENO, &idata, ret);
-
-    raise(SIGTERM);
+    while (1) {
+        fgets(buf, LINE_NR, stdin);
+        tok = strtok(buf, " \n");
+        if (strncmp(tok, "ping", 4) == 0) {
+            fputs("pong", stdout);
+        }
+        else {
+            odata[1] = atoi(tok) + 1;
+            odata[2] = atoi(strtok(NULL, " \n")) + 1;
+            if (write_rs485(port_fd, odata, onr) != onr)
+                fprintf(stderr, "error: serial port %s I/O error\n", dev);
+            read(port_fd, idata, inr);
+        }
+    }
 }

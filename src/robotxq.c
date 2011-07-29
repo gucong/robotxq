@@ -31,6 +31,7 @@
 #include "cpopen.h"
 
 struct termios old_tio;
+pid_t handctl_pid;
 
 /* extensible human interface */
 /* ----------------------------------- */
@@ -295,6 +296,8 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
+    kill(handctl_pid, SIGTERM);
+    wait(NULL);
     if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old_tio) == -1) {
         perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
@@ -416,7 +419,6 @@ int main (int argc, char *argv[])
     /* init hand controler */
     char handctl_buf[1024];
     snprintf(handctl_buf, 1024, "%s %s", handctl, hand_dev);
-    pid_t handctl_pid;
     FILE *handctl_fp[2];
     if ((handctl_pid = cpopen(handctl_fp, handctl_buf)) < 0)
         exit(EXIT_FAILURE);
