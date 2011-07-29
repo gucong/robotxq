@@ -307,6 +307,24 @@ static void sig_handler(int signo)
     exit(EXIT_SUCCESS);
 }
 
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+void print_help(char *argv0)
+{
+    printf("Usage: %s [OPTION]... BOARD_DEV HAND_DEV\n", argv0);
+    puts  ("robotxq -- Robot plays Xiangqi");
+    puts  ("OPTION:");
+    puts  ("  -h            display this help and exit");
+    puts  ("  -e ENGINE     use ENGINE as the engine program");
+    puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
+    puts  ("  -r READER     use READER as the program to read the board in");
+    puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
+}
+
+>>>>>>> 82eb7c31200859af696cc32ed83e7ceb5f531595
+>>>>>>> master
 int tcset_noncanonical(int fd)
 {
     struct termios tio;
@@ -343,13 +361,22 @@ int tcset_noncanonical(int fd)
 
 void print_help(char *argv0)
 {
+<<<<<<< HEAD
     printf("Usage: %s [OPTION]... BOARD_DEV HAND_DEV\n", argv0);
+=======
+    printf("Usage: %s [OPTION]... DEVICE\n", argv0);
+>>>>>>> master
     puts  ("robotxq -- Robot plays Xiangqi");
     puts  ("OPTION:");
     puts  ("  -h            display this help and exit");
     puts  ("  -e ENGINE     use ENGINE as the engine program");
+<<<<<<< HEAD
     puts  ("  -r READER     use READER as the program to read the board in");
     puts  ("  -w HANDCTL    use HANDCTL as the hand controler");
+=======
+    puts  ("  -f FEN_FILE   use positions in FEN_FILE as start positions");
+    puts  ("  -r READER     use READER as the program to read the board in");
+>>>>>>> master
     puts  ("  -b BRD_FILE   use BRD_FILE as the board configuration file");
 }
 
