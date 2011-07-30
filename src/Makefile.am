@@ -8,4 +8,4 @@ catboard_SOURCES = catboard.c read_board.c xiangqi.c
 robotxq_CFLAGS = -DCONFDIR="\"$(sysconfdir)\"" $(AM_CFLAGS)
 catboard_CFLAGS = -DCONFDIR="\"$(sysconfdir)\"" $(AM_CFLAGS)
 
-noinst_HEADERS = read_board.h xiangqi.h
+noinst_HEADERS = read_board.h xiangqi.h cpopen.h interface.h
