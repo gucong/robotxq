@@ -44,19 +44,20 @@ int interface_init(void)
         }
     }
 
-    int cmd;
+    int cmd, fd;
     for (cmd = 0; cmd < INTF_NR; ++cmd) {
         snprintf(dir_buf, 1024, "%s/.robotxq/%s.script", homedir, prompts[cmd][INTF_SCRIPT]);
         if (stat(dir_buf, &sts) == -1 && errno == ENOENT) {
-            if (creat(dir_buf, mode755) < 0) {
+            if ((fd = creat(dir_buf, mode755)) < 0) {
                 perror("create");
-                return -1;
             }
-            close(dir_buf);
+            close(fd);
         }
     }
     return 0;
 }
+
+pid_t interface_pid = 0;
 
 int interface_prompt(enum intf cmd)
 {
@@ -69,17 +70,27 @@ int interface_prompt(enum intf cmd)
     char prog_buf[1024];
     char dir_buf[1024];
 
-    snprintf(prog_buf, 1024, "%s/.robotxq/%s.script", homedir, prompts[cmd][INTF_SCRIPT]);
+    snprintf(prog_buf, 1024, "%s/.robotxq/%s.script",
+             homedir, prompts[cmd][INTF_SCRIPT]);
     snprintf(dir_buf, 1024, "%s/.robotxq", homedir);
 
     pid_t pid;
+
+    if (interface_pid) {
+        kill(-interface_pid, SIGTERM);
+    }
 
     if ((pid = fork()) < 0) {
         perror("fork");
         return -2;    /* fork error */
     }
 
+    if (pid > 0) {    /* parent */
+        interface_pid = pid;
+    }
+
     if (pid == 0) {    /* child */
+        setsid();
         freopen("/dev/null", "w", stdout);
         freopen("/dev/null", "w", stderr);
         chdir(dir_buf);

@@ -278,14 +278,22 @@ int one_chess_game (char *fen_setup, char *engine, FILE **handctl_fp)
 /* sig handler to restore stdin */
 static void sig_handler(int signo)
 {
+    /* kill all children */
     kill(0, SIGTERM);
-    wait(NULL);
+
+    /* kill interface session */
+    if (interface_pid)    /* defined in interface.c */
+        kill(-interface_pid, SIGTERM);
+
+    /* restore terminal */
     if (tcsetattr(STDIN_FILENO, TCSADRAIN, &old_tio) == -1) {
         perror("stdin tcgetattr");
         exit(EXIT_FAILURE);
     }
     tcflush(STDIN_FILENO, TCOFLUSH);
     tcflush(STDIN_FILENO, TCIFLUSH);
+
+    /* exit */
     exit(EXIT_SUCCESS);
 }
 
