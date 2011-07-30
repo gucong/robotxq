@@ -1,2 +1,16 @@
+2011-07-31 CONG GU <gucong43216@gmail.com>
+	The program is complete but still not intensively tested.
+
+	* feature:	a scriptable prompting system. (src/interface.c)
+
+	* feature:	helper programs such as `catboard' and `learn_brd'
+
+	* feature:	standalone, interchangeable I/O modules.
+			(Only serial port I/O is implemented as `io_board' and `io_hand')
+
+	* removal:	conf/xq.fen. Now the program read start position from physical board.
+
+	* bug:		the manual become outdated now.
+
 2011-07-16 CONG GU <gucong43216@gmail.com>
-	* init
+	Init repository.
