@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -54,6 +55,9 @@ int interface_init(void)
             close(fd);
         }
     }
+
+    if (signal(SIGCHLD, SIG_IGN) == SIG_ERR)
+        perror("signal SIGCHLD");
     return 0;
 }
 
@@ -85,11 +89,11 @@ int interface_prompt(enum intf cmd)
         return -2;    /* fork error */
     }
 
-    if (pid > 0) {    /* parent */
+    else if (pid > 0) {    /* parent */
         interface_pid = pid;
     }
 
-    if (pid == 0) {    /* child */
+    else if (pid == 0) {    /* child */
         setsid();
         freopen("/dev/null", "w", stdout);
         freopen("/dev/null", "w", stderr);
